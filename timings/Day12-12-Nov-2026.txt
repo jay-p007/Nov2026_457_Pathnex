@@ -1,0 +1,8 @@
+Day 12 - 12 Nov 2026
+
+3 Hours - Kubernetes session 2
+3 Hours - Learn about Kubernetes concepts like EKS cluster, Daemon sets, EKS version lifecycle 
+1 Hour - Coding practice
+30 min - Intro video
+40 min - English speaking practice
+30 min - Evening session
