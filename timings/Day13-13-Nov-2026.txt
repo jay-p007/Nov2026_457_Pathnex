@@ -1,0 +1,9 @@
+Day 13 - 13 Nov 2026
+
+3 Hours - Kubernetes Session 3
+3 Hours - Learn about terraform, k8s service, eks cluster, troubleshooting
+1 Hour - Coding practice
+50 min - Intro video
+30 min - English speaking practice
+30 min - Evening session
+
