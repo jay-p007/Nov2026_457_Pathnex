@@ -1,0 +1,8 @@
+Day 14 - 14 Nov 2026
+
+3 Hours - Kubernetes Session 4
+3 Hours - Learn Kubernetes statefulsets,Ingress,Affinity and other concepts
+1 Hour - Coding practice
+30 min - Intro video
+30 min - English speaking practice
+30 min - Evening session
