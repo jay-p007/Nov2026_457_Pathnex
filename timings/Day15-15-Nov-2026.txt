@@ -1,0 +1,8 @@
+Day 15 - 15 Nov 2026
+
+3:30 Hours - Kubernetes Session 5
+3 Hours - Learn Kubernetes probe, PDB, Cordon, Drain, Istio and other concepts
+1 Hour - Coding practice
+30 min - Intro video
+30 min - English speaking practice
+30 min - Evening session
