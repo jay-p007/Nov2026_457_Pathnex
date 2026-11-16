@@ -1,0 +1,7 @@
+Day 16 - 16 Nov 2026
+
+3 Hours - Kubernetes and Helm Session
+1 Hour - Coding practice
+30 min - Intro video
+3 Hours - Learn Helm concepts
+30 min - Evening session
