@@ -1,0 +1,8 @@
+Day 18 - 18 Nov 2026
+
+3 Hours - Terraform Session 1
+3 Hours - Learn about Terraform providers, Resources, Modules and other concepts
+1 Hour - Coding practice
+30 min - Intro video
+30 min - English speaking practice
+30 min - Evening session
