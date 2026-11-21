@@ -1,0 +1,8 @@
+Day 21 - 21 Nov 2026
+
+3:30 Hours - Monitoring Session 
+3 Hours - Learn about Monitoring and Observability concepts along with New relic setup
+30 min - Intro video practice and record
+1 Hour - Coding practice
+30 min - Evening session practice
+30 min - Evening session
