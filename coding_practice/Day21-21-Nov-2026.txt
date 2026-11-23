@@ -1,0 +1,269 @@
+Day 21 - Disaster Recovery and Backup Strategies
+
+1. Ansible - Backup and Restore Files
+
+- name: Backup and Restore Files
+  hosts: all
+  become: yes
+  tasks:
+    - name: Create backup of /etc directory
+      command: tar -czf /tmp/etc-backup.tar.gz -C / etc
+
+    - name: Copy backup to Ansible control node
+      fetch:
+        src: /tmp/etc-backup.tar.gz
+        dest: /tmp/backups/
+        flat: no
+
+    - name: Restore backup on managed server
+      unarchive:
+        src: /tmp/etc-backup.tar.gz
+        dest: /
+        remote_src: yes
+
+
+2. Terraform - Create S3 Bucket with Cross-Region Replication
+
+# AWS Providers
+provider "aws" {
+  region = "us-east-1"
+}
+
+provider "aws" {
+  alias  = "destination"
+  region = "eu-west-1"
+}
+
+# Source S3 Bucket
+resource "aws_s3_bucket" "pathnex_bucket" {
+  bucket = "pathnex-backup-bucket"
+}
+
+# Destination S3 Bucket
+resource "aws_s3_bucket" "pathnex_backup_bucket_eu" {
+  provider = aws.destination
+  bucket   = "pathnex-backup-bucket-eu"
+}
+
+# Enable Versioning on Source Bucket
+resource "aws_s3_bucket_versioning" "source" {
+  bucket = aws_s3_bucket.pathnex_bucket.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# Enable Versioning on Destination Bucket
+resource "aws_s3_bucket_versioning" "destination" {
+  provider = aws.destination
+  bucket   = aws_s3_bucket.pathnex_backup_bucket_eu.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# IAM Role for S3 Replication
+resource "aws_iam_role" "replication_role" {
+  name = "pathnex-s3-replication-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "s3.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+# IAM Policy for S3 Replication
+resource "aws_iam_role_policy" "replication_policy" {
+  name = "pathnex-s3-replication-policy"
+  role = aws_iam_role.replication_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetReplicationConfiguration",
+          "s3:ListBucket"
+        ]
+        Resource = aws_s3_bucket.pathnex_bucket.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObjectVersionForReplication",
+          "s3:GetObjectVersionAcl",
+          "s3:GetObjectVersionTagging"
+        ]
+        Resource = "${aws_s3_bucket.pathnex_bucket.arn}/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ReplicateObject",
+          "s3:ReplicateDelete",
+          "s3:ReplicateTags"
+        ]
+        Resource = "${aws_s3_bucket.pathnex_backup_bucket_eu.arn}/*"
+      }
+    ]
+  })
+}
+
+# Configure Cross-Region Replication
+resource "aws_s3_bucket_replication_configuration" "pathnex_replication" {
+  depends_on = [
+    aws_s3_bucket_versioning.source,
+    aws_s3_bucket_versioning.destination
+  ]
+
+  role   = aws_iam_role.replication_role.arn
+  bucket = aws_s3_bucket.pathnex_bucket.id
+
+  rule {
+    id     = "pathnex-backup-replication"
+    status = "Enabled"
+
+    destination {
+      bucket = aws_s3_bucket.pathnex_backup_bucket_eu.arn
+    }
+  }
+}
+
+# Upload Backup File to Source Bucket
+resource "aws_s3_object" "pathnex_backup_file" {
+  bucket = aws_s3_bucket.pathnex_bucket.id
+  key    = "backup.tar.gz"
+  source = "pathnex-backup.tar.gz"
+}
+
+
+3. Kubernetes - Disaster Recovery with Persistent Volumes
+
+# Headless Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: pathnex
+spec:
+  clusterIP: None
+  selector:
+    app: pathnex
+  ports:
+    - port: 80
+      targetPort: 80
+
+---
+
+# StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: pathnex-statefulset
+spec:
+  serviceName: pathnex
+  replicas: 3
+  selector:
+    matchLabels:
+      app: pathnex
+  template:
+    metadata:
+      labels:
+        app: pathnex
+    spec:
+      containers:
+        - name: nginx
+          image: nginx
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - mountPath: /usr/share/nginx/html
+              name: web-content
+  volumeClaimTemplates:
+    - metadata:
+        name: web-content
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+
+
+4. Jenkinsfile - Backup Strategy for Jenkins Workspace
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Backup') {
+            steps {
+                echo 'Backing up Jenkins workspace...'
+
+                sh '''
+                    tar -czf "$WORKSPACE/jenkins-backup.tar.gz" \
+                    --exclude=jenkins-backup.tar.gz \
+                    -C "$WORKSPACE" .
+                '''
+
+                archiveArtifacts artifacts: 'jenkins-backup.tar.gz',
+                                 fingerprint: true
+            }
+        }
+
+        stage('Restore') {
+            steps {
+                echo 'Restoring Jenkins workspace...'
+
+                unarchive mapping: [
+                    'jenkins-backup.tar.gz': '.'
+                ]
+            }
+        }
+    }
+}
+
+
+5. GitLab CI/CD - Backup and Restore Deployment Files
+
+stages:
+  - backup
+  - restore
+
+backup:
+  stage: backup
+  script:
+    - tar -czf backup.tar.gz kubernetes/deployment.yaml
+  artifacts:
+    paths:
+      - backup.tar.gz
+    expire_in: 7 days
+
+restore:
+  stage: restore
+  needs:
+    - job: backup
+      artifacts: true
+  script:
+    - mkdir -p kubernetes
+    - tar -xzf backup.tar.gz -C .
+    - ls -l kubernetes/
+
+
+6. Docker - Docker Compose
+
+services:
+  web:
+    image: nginx
+    container_name: pathnex-nginx
+    ports:
+      - "80:80"
+    restart: unless-stopped
