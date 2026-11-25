@@ -1,0 +1,124 @@
+Day 24 - Advanced Terraform Modules and CI/CD Pipeline Scaling
+
+1. Ansible - Deploy Docker Containers with Kubernetes Using Helm
+
+- name: Deploy Docker Containers with Helm
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Check if Helm is installed
+      command: helm version --short
+      register: helm_check
+      changed_when: false
+      failed_when: false
+
+    - name: Install Helm
+      shell: curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      when: helm_check.rc != 0
+
+    - name: Deploy microservices with Helm
+      command: helm upgrade --install pathnex-app ./microservice-chart
+
+
+2. Terraform - Multi-Module Infrastructure with Outputs
+
+# VPC Module
+module "pathnex_vpc" {
+  source = "./vpc"
+}
+
+# EC2 Instance Module
+module "pathnex_instance" {
+  source = "./instance"
+  vpc_id = module.pathnex_vpc.vpc_id
+}
+
+# Output Instance ID
+output "instance_id" {
+  value = module.pathnex_instance.instance_id
+}
+
+
+3. Kubernetes - Helm-based Auto-Scaling Deployments
+
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pathnex-web-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: pathnex-web-app
+  template:
+    metadata:
+      labels:
+        app: pathnex-web-app
+    spec:
+      containers:
+        - name: nginx
+          image: nginx
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+
+---
+
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: pathnex-web-app-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pathnex-web-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+
+4. Jenkinsfile - Scaling CI/CD Pipeline
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Scale Up') {
+            steps {
+                echo 'Scaling up Jenkins pipeline agents for heavy workloads...'
+                // Simulating scaling logic
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Building project...'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Deploying project...'
+            }
+        }
+    }
+}
+
+
+5. Docker - Healthcheck
+
+FROM nginx:alpine
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD wget -q --spider http://127.0.0.1/ || exit 1
