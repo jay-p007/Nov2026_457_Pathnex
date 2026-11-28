@@ -1,0 +1,8 @@
+Day 28 - 28 Nov 2026
+
+1 Hours - DevSecOps Session 
+1 Hour - Coding practice
+30 min - Intro video practice and record
+3 Hours - Learn about SAST, SCA, Container Security, IaC Security, DAST and other concepts
+30 min - Evening sesson practice
+30 min - Evening session
